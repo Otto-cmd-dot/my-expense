@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+  
+</head>
+<body>
+  <!-- 🌐 Header -->
+  <header class="app-header">
+    <h1>💰 Expense Tracker</h1>
+  </header>
+
+  <!-- 📊 Summary Section -->
+  <section class="summary">
+    <div class="card income">
+      <h2>Income</h2>
+      <p id="totalIncome">$0</p>
+    </div>
+    <div class="card expense">
+      <h2>Expense</h2>
+      <p id="totalExpense">$0</p>
+    </div>
+    <div class="card balance">
+      <h2>Balance</h2>
+      <p id="totalBalance">$0</p>
+    </div>
+  </section>
+
+  <!-- 📜 Transaction List -->
+  <main class="transactions-section">
+    <h2>Transactions</h2>
+    <ul id="transactionList" class="transaction-list">
+      <!-- JS will insert list items here -->
+    </ul>
+  </main>
+
+  <!-- ➕ Add Transaction Form -->
+  <section id="addTransaction" class="modal hidden">
+    <div class="modal-content">
+      <h2>Add Transaction</h2>
+      <form id="transactionForm">
+        <label>
+          Type:
+          <select id="type">
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </label>
+
+        <label>
+          Amount:
+          <input type="number" id="amount" step="0.01" placeholder="Enter amount" required />
+        </label>
+
+        <label>
+          Category:
+          <input type="text" id="category" placeholder="e.g., Food, Salary" required />
+        </label>
+
+        <label>
+          Note:
+          <input type="text" id="note" placeholder="Optional note" />
+        </label>
+
+        <label>
+          Date:
+          <input type="date" id="date" required />
+        </label>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Add</button>
+          <button type="button" id="cancelBtn" class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ⚙️ Footer / Utility buttons -->
+  <footer class="footer">
+    <button id="exportBtn" class="btn-secondary">Export Data</button>
+    <label class="import-btn">
+      Import
+      <input type="file" id="importFile" accept=".json" hidden />
+    </label>
+  </footer>
+
+  <!-- Floating Add Button -->
+  <button id="openModalBtn" class="floating-btn">+</button>
+
+  <!-- Link JS -->
+  <script src="script.js"></script>
+</body>
+</html>
