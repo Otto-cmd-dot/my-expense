@@ -1,4 +1,6 @@
-// === 📦 Utility Functions ===
+// ===============================
+// 📦 Utility Functions
+// ===============================
 
 // Generate unique ID
 function generateId() {
@@ -22,7 +24,9 @@ function formatCurrency(amount) {
 }
 
 
-// === 🧮 Core App Logic ===
+// ===============================
+// 🧮 Core Variables
+// ===============================
 
 let transactions = loadTransactions();
 
@@ -35,12 +39,39 @@ const openModalBtn = document.getElementById('openModalBtn');
 const modal = document.getElementById('addTransaction');
 const cancelBtn = document.getElementById('cancelBtn');
 const form = document.getElementById('transactionForm');
-
-const exportBtn = document.getElementById('exportBtn');
-const importFile = document.getElementById('importFile');
+const themeBtn = document.getElementById('themeBtn');
 
 
-// === 🧭 Modal Controls ===
+// ===============================
+// 🌙 Theme Controls
+// ===============================
+
+function applySavedTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.body.classList.toggle('dark', savedTheme === 'dark');
+  updateThemeIcon();
+}
+
+function updateThemeIcon() {
+  const isDark = document.body.classList.contains('dark');
+  themeBtn.textContent = isDark ? '☀️' : '🌙';
+}
+
+themeBtn.addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+  const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+  localStorage.setItem('theme', theme);
+  updateThemeIcon();
+});
+
+// Initialize theme on page load
+applySavedTheme();
+
+
+// ===============================
+// 🪟 Modal Controls
+// ===============================
+
 openModalBtn.addEventListener('click', () => {
   modal.classList.remove('hidden');
 });
@@ -50,29 +81,45 @@ cancelBtn.addEventListener('click', () => {
   form.reset();
 });
 
+// ===============================
+// ➕ Add Transaction
+// ===============================
 
-// === ➕ Add Transaction ===
 form.addEventListener('submit', (e) => {
   e.preventDefault();
 
   const type = document.getElementById('type').value;
   const amount = parseFloat(document.getElementById('amount').value);
+  const currency = document.getElementById('currency').value.trim();
   const category = document.getElementById('category').value.trim();
-  const note = document.getElementById('note').value.trim();
+  const note = document.getElementById('note').value.trim() ? document.getElementById('note').value.trim() : 'N/A';
   const date = document.getElementById('date').value;
+  const paymentMethod = document.getElementById('paymentMethod').value.trim();
+  const tagsInput = document.getElementById('tags').value.trim();
+  const receiptUrl = document.getElementById('receiptUrl').value.trim();
 
-  if (!amount || !category || !date) return alert('Please fill required fields.');
+  // Validation
+  if (!amount || !category || !date || !currency) {
+    alert('⚠️ Please fill all required fields.');
+    return;
+  }
 
   const newTx = {
     id: generateId(),
     type,
     amount,
+    currency,
     category,
     note,
-    date
+    date,
+    paymentMethod,
+    tagsInput,
+    receiptUrl,
+    createdAt: new Date().toISOString()
   };
 
-  transactions.push(newTx);
+  // Add to the **top** of transactions array
+  transactions.unshift(newTx);
   saveTransactions(transactions);
   renderTransactions();
   updateSummary();
@@ -82,9 +129,13 @@ form.addEventListener('submit', (e) => {
 });
 
 
-// === 🗑️ Delete Transaction ===
+
+// ===============================
+// 🗑️ Delete Transaction
+// ===============================
+
 function deleteTransaction(id) {
-  if (!confirm('Delete this transaction?')) return;
+  if (!confirm('🗑️ Delete this transaction?')) return;
   transactions = transactions.filter(tx => tx.id !== id);
   saveTransactions(transactions);
   renderTransactions();
@@ -92,46 +143,79 @@ function deleteTransaction(id) {
 }
 
 
-// === 🖼️ Render Transactions ===
+// ===============================
+// 🖼️ Render Transactions
+// ===============================
+
 function renderTransactions() {
   transactionList.innerHTML = '';
 
   if (transactions.length === 0) {
-    transactionList.innerHTML = '<li>No transactions yet.</li>';
+    transactionList.innerHTML = '<li class="empty-msg">No transactions yet.</li>';
     return;
   }
 
   transactions
-    .sort((a, b) => new Date(b.date) - new Date(a.date)) // show newest first
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
     .forEach(tx => {
       const li = document.createElement('li');
-      li.classList.add(tx.type);
+      li.classList.add('tx-card', tx.type);
+
+      const emoji = tx.type === 'income' ? '💵' : '💸';
+      const sign = tx.type === 'income' ? '+' : '-';
+
+      const categoryEmojiMap = {
+        "Housing": "🏠",
+        "Transportation": "🚗",
+        "Food": "🍔",
+        "Health & Medical": "💊",
+        "Savings & Investments": "💰",
+        "Personal": "🧑",
+        "Entertainment & Leisure": "🎬",
+        "Miscellaneous": "📦",
+        "Other": "❓"
+      };
+
+      
+      const categoryEmoji = categoryEmojiMap[tx.category] || "❓";
 
       li.innerHTML = `
-        <div class="tx-info">
-          <span>${tx.category} ${tx.note ? `- ${tx.note}` : ''}</span>
-          <small>${tx.date}</small>
+        <div class="tx-left">
+          <div class="tx-icon">${emoji}</div>
+          <div class="tx-details">
+            <span class="tx-category">${categoryEmoji} ${tx.category}</span>
+            ${tx.note ? `<span class="tx-note"> ${tx.note}</span>` : ''}
+            <small class="tx-date">${tx.date}</small>
+            <small class="tx-meta">
+              ${tx.paymentMethod ? `💳 ${tx.paymentMethod}` : ''}
+              ${tx.tags?.length ? `🏷️ ${tx.tags.join(', ')}` : ''}
+            </small>
+            ${tx.receiptUrl ? `<a href="${tx.receiptUrl}" target="_blank" class="tx-receipt">🧾 View Receipt</a>` : ''}
+          </div>
         </div>
-        <div>
-          <span class="tx-amount">${formatCurrency(tx.amount)}</span>
-          <button class="delete-btn" data-id="${tx.id}">🗑️</button>
+        <div class="tx-right">
+          <span class="tx-amount ${tx.type}">${sign}${formatCurrency(tx.amount)}</span>
+          <button class="delete-btn" title="Delete" data-id="${tx.id}">🗑️</button>
         </div>
       `;
+
 
       transactionList.appendChild(li);
     });
 
-  // Attach delete listeners
   document.querySelectorAll('.delete-btn').forEach(btn => {
     btn.addEventListener('click', e => {
-      const id = e.target.getAttribute('data-id');
+      const id = e.target.dataset.id;
       deleteTransaction(id);
     });
   });
 }
 
 
-// === 💰 Update Summary ===
+// ===============================
+// 💰 Update Summary
+// ===============================
+
 function updateSummary() {
   const income = transactions
     .filter(tx => tx.type === 'income')
@@ -149,48 +233,100 @@ function updateSummary() {
 }
 
 
-// === 💾 Export / Import ===
+// ===============================
+// 💾 Export / Import (Excel)
+// ===============================
 
-// Export all data to JSON file
+const exportBtn = document.createElement('button');
+exportBtn.textContent = '⬇️ Export Excel';
+exportBtn.className = 'btn-secondary';
+document.querySelector('.footer').appendChild(exportBtn);
+
 exportBtn.addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(transactions, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'expense-data.json';
-  a.click();
-  URL.revokeObjectURL(url);
+  if (transactions.length === 0) return alert('No data to export.');
+
+  const ws = XLSX.utils.json_to_sheet(transactions);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+  XLSX.writeFile(wb, 'expense-data.xlsx');
 });
 
-// Import data from JSON file
-importFile.addEventListener('change', (e) => {
+const importFile = document.createElement('input');
+importFile.type = 'file';
+importFile.accept = '.xlsx, .xls';
+importFile.style.display = 'none';
+document.body.appendChild(importFile);
+
+importFile.addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = (event) => {
-    try {
-      const importedData = JSON.parse(event.target.result);
-      if (Array.isArray(importedData)) {
-        if (confirm('Replace existing data with imported data?')) {
-          transactions = importedData;
-          saveTransactions(transactions);
-          renderTransactions();
-          updateSummary();
-          alert('Data imported successfully!');
-        }
-      } else {
-        alert('Invalid file format.');
+  reader.onload = evt => {
+    const data = new Uint8Array(evt.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const imported = XLSX.utils.sheet_to_json(sheet);
+
+    if (Array.isArray(imported)) {
+      if (confirm('Replace existing data with imported Excel data?')) {
+        transactions = imported;
+        saveTransactions(transactions);
+        renderTransactions();
+        updateSummary();
+        alert('✅ Data imported successfully!');
       }
-    } catch (err) {
-      alert('Error reading file.');
+    } else {
+      alert('❌ Invalid Excel format.');
     }
   };
-  reader.readAsText(file);
+  reader.readAsArrayBuffer(file);
+});
+
+const clearBtn = document.getElementById('clearBtn');
+
+clearBtn.addEventListener('click', () => {
+  if (transactions.length === 0) {
+    alert('No transactions to clear.');
+    return;
+  }
+
+  // Step 1: Ask if user wants to export first
+  const exportFirst = confirm('Do you want to export transactions before clearing?');
+  if (exportFirst) {
+    if (transactions.length > 0) {
+      // Trigger export programmatically
+      exportBtn.click();
+      alert('Please check your downloaded file before clearing.');
+    }
+  }
+
+  // Step 2: Ask for final confirmation
+  const confirmClear = confirm('Are you sure you want to clear all transactions? This cannot be undone.');
+  if (!confirmClear) return;
+
+  // Step 3: Clear data
+  transactions = [];
+  saveTransactions(transactions);
+  renderTransactions();
+  updateSummary();
+
+  alert('All transactions cleared.');
 });
 
 
-// === 🚀 Initialize App ===
+const importBtn = document.createElement('button');
+importBtn.textContent = '⬆️ Import Excel';
+importBtn.className = 'btn-secondary';
+document.querySelector('.footer').appendChild(importBtn);
+importBtn.addEventListener('click', () => importFile.click());
+
+
+// ===============================
+// 🚀 Initialize App
+// ===============================
+
 function init() {
   renderTransactions();
   updateSummary();

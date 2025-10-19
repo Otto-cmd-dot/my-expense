@@ -1,4 +1,37 @@
-/* 🌐 Base styles */
+/* 🎨 LIGHT THEME (default) */
+:root {
+  --bg-color: #f5f6fa;
+  --text-color: #2f3640;
+  --card-bg: #ffffff;
+  --header-bg: #4b7bec;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --border-color: #dcdde1;
+  --income-color: #2ecc71;
+  --expense-color: #e74c3c;
+  --balance-color: #f1c40f;
+  --btn-primary-bg: #4b7bec;
+  --btn-primary-hover: #3867d6;
+  --btn-secondary-bg: #dcdde1;
+  --btn-secondary-text: #2f3640;
+  --modal-bg: rgba(0, 0, 0, 0.4);
+}
+
+/* 🌙 DARK THEME */
+body.dark {
+  --bg-color: #1e1e2f;
+  --text-color: #f5f6fa;
+  --card-bg: #2c2c3e;
+  --header-bg: #3b3b5a;
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --border-color: #3b3b5a;
+  --btn-primary-bg: #4b7bec;
+  --btn-primary-hover: #3867d6;
+  --btn-secondary-bg: #3b3b5a;
+  --btn-secondary-text: #f5f6fa;
+  --modal-bg: rgba(0, 0, 0, 0.6);
+}
+
+/* 🌐 Base Styles */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -7,24 +40,95 @@
 }
 
 body {
-  background-color: #f5f6fa;
-  color: #333;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  transition: background-color 0.4s ease, color 0.4s ease;
   padding-bottom: 4rem; /* space for floating button */
+}
+
+/* Smooth transitions for theme change */
+.card,
+.tx-card,
+.modal-content,
+.footer,
+.app-header {
+  transition: background-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
 }
 
 /* 🧭 Header */
 .app-header {
-  background-color: #4b7bec;
-  color: white;
-  text-align: center;
-  padding: 1rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  background-color: var(--header-bg);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 2px 6px var(--shadow-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-/* 📊 Summary cards */
+.header-left,
+.header-center,
+.header-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.5px;
+  white-space: nowrap; /* Prevent wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Optional: truncate if too long */
+}
+
+/* Mobile adjustment */
+@media (max-width: 480px) {
+  .app-title {
+    font-size: 1.1rem; /* smaller font on mobile */
+  }
+}
+
+
+/* 🌙 Theme toggle */
+.theme-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.theme-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: scale(1.1);
+}
+.theme-btn:active {
+  transform: scale(0.95);
+}
+
+/* 📱 Header responsive */
+@media (max-width: 600px) {
+  .app-title {
+    font-size: 1.1rem;
+  }
+  .theme-btn {
+    font-size: 1rem;
+  }
+}
+
+/* 📊 Summary Cards */
 .summary {
   display: flex;
   justify-content: space-around;
@@ -32,104 +136,193 @@ body {
   padding: 1rem;
   flex-wrap: wrap;
 }
-
 .card {
   flex: 1;
   min-width: 100px;
   text-align: center;
   border-radius: 12px;
   padding: 1rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  background-color: white;
+  box-shadow: 0 2px 4px var(--shadow-color);
+  background-color: var(--card-bg);
+  color: var(--text-color);
+}
+.income {
+  border-top: 4px solid var(--income-color);
+}
+.expense {
+  border-top: 4px solid var(--expense-color);
+}
+.balance {
+  border-top: 4px solid var(--balance-color);
 }
 
-.income { border-top: 4px solid #2ecc71; }
-.expense { border-top: 4px solid #e74c3c; }
-.balance { border-top: 4px solid #f1c40f; }
-
-/* 📜 Transactions list */
+/* 📜 Transactions Section */
 .transactions-section {
   padding: 1rem;
 }
 
 .transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 60vh; /* scrollable container */
+  overflow-y: auto;
+  padding: 0;
   list-style: none;
-  margin-top: 1rem;
+  width: 100%;
 }
 
-.transaction-list li {
-  background: white;
-  border-left: 4px solid #ccc;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.5rem;
+/* 💳 Transaction Card */
+.tx-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px var(--shadow-color);
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+} 
+
+.tx-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px var(--shadow-color);
 }
 
-.transaction-list li.income {
-  border-left-color: #2ecc71;
+.tx-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
-
-.transaction-list li.expense {
-  border-left-color: #e74c3c;
+.tx-icon {
+  font-size: 1.5rem;
 }
-
-/* 💬 Transaction details */
-.tx-info {
+.tx-details {
   display: flex;
   flex-direction: column;
 }
 
+.tx-category {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  background-color: rgba(75, 123, 236, 0.1);
+  display: inline-block;
+}
+
+body.dark .tx-category {
+  background-color: rgba(75, 123, 236, 0.2);
+}
+
+.tx-meta {
+  display: block;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.tx-note {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+}
+body.dark .tx-note {
+  color: #b2bec3;
+}
+.tx-date {
+  font-size: 0.75rem;
+  color: #95a5a6;
+}
+body.dark .tx-date {
+  color: #b2bec3;
+}
+
+.tx-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 .tx-amount {
   font-weight: bold;
 }
+.tx-amount.income {
+  color: var(--income-color);
+}
+.tx-amount.expense {
+  color: var(--expense-color);
+}
 
-/* ➕ Floating add button */
+.delete-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--expense-color);
+  transition: transform 0.1s;
+}
+.delete-btn:hover {
+  transform: scale(1.2);
+}
+
+/* ➕ Floating Add Button */
 .floating-btn {
   position: fixed;
-  bottom: 1.5rem;
+  bottom: 4rem; /* Move up from footer */
   right: 1.5rem;
-  background-color: #4b7bec;
-  color: white;
+  background-color: var(--btn-primary-bg);
+  color: #fff;
   border: none;
   border-radius: 50%;
   width: 60px;
   height: 60px;
   font-size: 2rem;
   cursor: pointer;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   transition: background 0.3s;
+  z-index: 10; /* Above footer */
 }
-
 .floating-btn:hover {
-  background-color: #3867d6;
+  background-color: var(--btn-primary-hover);
 }
 
-/* 🪟 Modal (Add transaction form) */
+/* 📱 Mobile adjustments */
+@media (max-width: 480px) {
+  .footer {
+    gap: 0.5rem; /* Add space between footer buttons */
+    padding: 0.5rem 0.25rem;
+  }
+
+  .floating-btn {
+    bottom: 5rem; /* Move up slightly more on small screens */
+    width: 55px;
+    height: 55px;
+    font-size: 1.8rem;
+  }
+}
+
+/* 🪟 Modal Form */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: var(--modal-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
 }
-
 .modal.hidden {
   display: none;
 }
-
 .modal-content {
-  background: white;
+  background: var(--card-bg);
+  color: var(--text-color);
   border-radius: 12px;
   padding: 1.5rem;
   width: 90%;
   max-width: 400px;
+  box-shadow: 0 2px 6px var(--shadow-color);
 }
-
 .modal-content h2 {
   text-align: center;
   margin-bottom: 1rem;
@@ -140,13 +333,20 @@ label {
   margin-bottom: 0.75rem;
   font-size: 0.9rem;
 }
-
-input, select {
+input,
+select {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   margin-top: 0.25rem;
+  background: var(--card-bg);
+  color: var(--text-color);
+}
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--btn-primary-bg);
 }
 
 .form-actions {
@@ -155,41 +355,107 @@ input, select {
   margin-top: 1rem;
 }
 
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
   padding: 0.6rem 1.2rem;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   font-weight: bold;
+  transition: background 0.3s ease, color 0.3s ease;
 }
-
 .btn-primary {
-  background-color: #4b7bec;
-  color: white;
+  background-color: var(--btn-primary-bg);
+  color: #fff;
 }
-
+.btn-primary:hover {
+  background-color: var(--btn-primary-hover);
+}
 .btn-secondary {
-  background-color: #dcdde1;
-  color: #2f3640;
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
 }
 
-/* ⚙️ Footer buttons */
+/* ⚙️ Footer */
 .footer {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: white;
+  background: var(--card-bg);
   display: flex;
   justify-content: space-around;
   align-items: center;
   padding: 0.5rem;
-  box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 -2px 4px var(--shadow-color);
+  z-index: 5; /* Ensure footer is below floating button */
 }
 
-.import-btn {
-  background-color: #dcdde1;
+.footer button {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border: none;
+  padding: 0.6rem 1rem; /* slightly smaller padding */
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease;
+  white-space: nowrap; /* prevent text wrap */
+  font-size: 0.9rem;   /* slightly smaller font */
+}
+
+.footer button:hover {
+  background: var(--btn-primary-bg);
+  color: #fff;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .footer {
+    gap: 0.4rem; 
+    padding: 0.5rem 0.25rem;
+  }
+
+  .footer button {
+    font-size: 0.8rem; /* smaller font to fit */
+    padding: 0.5rem 0.8rem; /* smaller padding */
+  }
+
+  .floating-btn {
+    bottom: 5rem; 
+    width: 55px;
+    height: 55px;
+    font-size: 1.8rem;
+  }
+}
+
+/* 🧾 Extra */
+.tx-receipt {
+  display: inline-block;
+  font-size: 0.8rem;
+  color: var(--btn-primary-bg);
+  text-decoration: none;
+  margin-top: 4px;
+}
+.tx-receipt:hover {
+  text-decoration: underline;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+#clearBtn {
+  background-color: #e74c3c;
+  color: white;
   border-radius: 8px;
   padding: 0.6rem 1.2rem;
   cursor: pointer;
+  transition: background 0.2s;
+}
+#clearBtn:hover {
+  background-color: #c0392b;
 }
