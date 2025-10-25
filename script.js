@@ -23,6 +23,66 @@ function formatCurrency(amount) {
   return '$' + amount.toFixed(2);
 }
 
+// === 📅 Monthly Export Prompt ===
+function checkMonthlyExportPrompt() {
+  const today = new Date();
+  // const firstDay = today.getDate() === 1;
+  const firstDay = true; // For testing purposes, always true
+  const lastPromptMonth = localStorage.getItem('lastExportPrompt');
+  const currentMonth = `${today.getFullYear()}-${today.getMonth()+1}`;
+
+  if (firstDay && lastPromptMonth !== currentMonth) {
+    document.getElementById('monthlyExportModal').classList.remove('hidden');
+    localStorage.setItem('lastExportPrompt', currentMonth);
+  }
+}
+
+// Call on page load
+checkMonthlyExportPrompt();
+
+// Handle modal buttons
+document.getElementById('exportLastMonthBtn').addEventListener('click', () => {
+  exportTransactionsOfPreviousMonth(); // function for filtering & exporting
+  document.getElementById('monthlyExportModal').classList.add('hidden');
+});
+
+document.getElementById('cancelLastMonthBtn').addEventListener('click', () => {
+  document.getElementById('monthlyExportModal').classList.add('hidden');
+});
+
+// Function to export only last month's transactions
+function exportTransactionsOfPreviousMonth() {
+  const today = new Date();
+  const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const prevMonthNum = prevMonth.getMonth();
+  const prevYear = prevMonth.getFullYear();
+
+  const lastMonthTx = transactions.filter(tx => {
+    const txDate = new Date(tx.date);
+    return txDate.getMonth() === prevMonthNum && txDate.getFullYear() === prevYear;
+  });
+
+  if (lastMonthTx.length === 0) return alert('No transactions for last month.');
+
+  // Excel export logic (Blob + a download)
+  const ws = XLSX.utils.json_to_sheet(lastMonthTx);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Previous Month Transactions');
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([wbout], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `transactions-${prevYear}-${prevMonthNum + 1}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+}
+
+
 
 // ===============================
 // 🧮 Core Variables
@@ -216,6 +276,12 @@ function renderTransactions() {
 // 💰 Update Summary
 // ===============================
 
+function maskIncome(value) {
+  const str = value.toString();
+  if (str.length <= 2) return '*'.repeat(str.length);
+  return str.slice(0, 2) + '*'.repeat(str.length - 2);
+}
+
 function updateSummary() {
   const income = transactions
     .filter(tx => tx.type === 'income')
@@ -227,9 +293,9 @@ function updateSummary() {
 
   const balance = income - expense;
 
-  totalIncome.textContent = formatCurrency(income);
+  totalIncome.textContent = maskIncome(formatCurrency(income));
   totalExpense.textContent = formatCurrency(expense);
-  totalBalance.textContent = formatCurrency(balance);
+  totalBalance.textContent = maskIncome(formatCurrency(balance));
 }
 
 
