@@ -18,9 +18,14 @@ function saveTransactions(transactions) {
   localStorage.setItem('transactions', JSON.stringify(transactions));
 }
 
-// Format currency
-function formatCurrency(amount) {
-  return '$' + amount.toFixed(2);
+
+// Updated formatter
+function formatCurrency(amount, currency = 'USD') {
+  return amount.toLocaleString('en-US', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+  });
 }
 
 // === 📅 Monthly Export Prompt ===
@@ -223,6 +228,7 @@ function renderTransactions() {
 
       const emoji = tx.type === 'income' ? '💵' : '💸';
       const sign = tx.type === 'income' ? '+' : '-';
+      const currencySymbol = tx.currency === 'USD' ? '$' : (tx.currency === 'KHR' ? '៛' : '');
 
       const categoryEmojiMap = {
         "Housing": "🏠",
@@ -254,7 +260,7 @@ function renderTransactions() {
           </div>
         </div>
         <div class="tx-right">
-          <span class="tx-amount ${tx.type}">${sign}${formatCurrency(tx.amount)}</span>
+          <span class="tx-amount ${tx.type}">${sign}${currencySymbol}${tx.amount}</span>
           <button class="delete-btn" title="Delete" data-id="${tx.id}">🗑️</button>
         </div>
       `;
@@ -282,20 +288,28 @@ function maskIncome(value) {
   return str.slice(0, 2) + '*'.repeat(str.length - 2);
 }
 
+
 function updateSummary() {
+  const USD_RATE = 4000; 
+
+  function toUSD(tx) {
+    if (tx.currency === 'KHR') return tx.amount / USD_RATE;
+    return tx.amount;
+  }
+
   const income = transactions
     .filter(tx => tx.type === 'income')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+    .reduce((sum, tx) => sum + toUSD(tx), 0);
 
   const expense = transactions
     .filter(tx => tx.type === 'expense')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+    .reduce((sum, tx) => sum + toUSD(tx), 0);
 
   const balance = income - expense;
 
-  totalIncome.textContent = maskIncome(formatCurrency(income));
-  totalExpense.textContent = formatCurrency(expense);
-  totalBalance.textContent = maskIncome(formatCurrency(balance));
+  totalIncome.textContent = formatCurrency(income, 'USD');
+  totalExpense.textContent = formatCurrency(expense, 'USD');
+  totalBalance.textContent = formatCurrency(balance, 'USD');
 }
 
 
