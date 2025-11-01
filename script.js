@@ -1,429 +1,242 @@
-// ===============================
-// 📦 Utility Functions
-// ===============================
-
-// Generate unique ID
-function generateId() {
-  return '_' + Math.random().toString(36).substr(2, 9);
-}
-
-// Load transactions from localStorage
-function loadTransactions() {
-  const data = localStorage.getItem('transactions');
-  return data ? JSON.parse(data) : [];
-}
-
-// Save transactions to localStorage
-function saveTransactions(transactions) {
-  localStorage.setItem('transactions', JSON.stringify(transactions));
-}
-
-
-// Updated formatter
-function formatCurrency(amount, currency = 'USD') {
-  return amount.toLocaleString('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
+/* ===== Tab Navigation ===== */
+const tabs = document.querySelectorAll('.tab-btn');
+const contents = document.querySelectorAll('.tab-content');
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.tab;
+    contents.forEach(c => c.classList.add('hidden'));
+    document.getElementById(target+'-tab').classList.remove('hidden');
+    tabs.forEach(t => t.classList.remove('bg-blue-500','text-white'));
+    tab.classList.add('bg-blue-500','text-white');
   });
-}
+});
 
-// === 📅 Monthly Export Prompt ===
-function checkMonthlyExportPrompt() {
-  const today = new Date();
-  // const firstDay = today.getDate() === 1;
-  const firstDay = true; // For testing purposes, always true
-  const lastPromptMonth = localStorage.getItem('lastExportPrompt');
-  const currentMonth = `${today.getFullYear()}-${today.getMonth()+1}`;
+// Mobile Menu Toggle
+const mobileMenuButton = document.getElementById('mobile-menu-button');
+const mobileNav = document.getElementById('mobile-nav');
+const mobileNavContent = mobileNav.querySelector('div');
+const mobileMenuIcon = mobileMenuButton.querySelector('svg');
 
-  if (firstDay && lastPromptMonth !== currentMonth) {
-    document.getElementById('monthlyExportModal').classList.remove('hidden');
-    localStorage.setItem('lastExportPrompt', currentMonth);
+mobileMenuButton.addEventListener('click', () => {
+  const isOpen = !mobileNav.classList.contains('max-h-0');
+
+  if (!isOpen) {
+    // Open bottom sheet
+    mobileNav.classList.remove('max-h-0');
+    mobileNavContent.classList.remove('translate-y-full', 'opacity-0');
+    mobileNavContent.classList.add('translate-y-0', 'opacity-100');
+
+    // Change icon to "close"
+    mobileMenuIcon.innerHTML = `
+      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+    `;
+  } else {
+    // Close bottom sheet
+    mobileNavContent.classList.remove('translate-y-0', 'opacity-100');
+    mobileNavContent.classList.add('translate-y-full', 'opacity-0');
+    mobileNav.classList.add('max-h-0');
+
+    // Change icon back to hamburger
+    mobileMenuIcon.innerHTML = `
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+    `;
   }
-}
-
-// Call on page load
-checkMonthlyExportPrompt();
-
-// Handle modal buttons
-document.getElementById('exportLastMonthBtn').addEventListener('click', () => {
-  exportTransactionsOfPreviousMonth(); // function for filtering & exporting
-  document.getElementById('monthlyExportModal').classList.add('hidden');
 });
 
-document.getElementById('cancelLastMonthBtn').addEventListener('click', () => {
-  document.getElementById('monthlyExportModal').classList.add('hidden');
-});
+// Close menu when a link is clicked
+document.querySelectorAll('[data-mobile-link]').forEach(link => {
+  link.addEventListener('click', () => {
+    mobileNavContent.classList.remove('translate-y-0', 'opacity-100');
+    mobileNavContent.classList.add('translate-y-full', 'opacity-0');
+    mobileNav.classList.add('max-h-0');
 
-// Function to export only last month's transactions
-function exportTransactionsOfPreviousMonth() {
-  const today = new Date();
-  const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-  const prevMonthNum = prevMonth.getMonth();
-  const prevYear = prevMonth.getFullYear();
-
-  const lastMonthTx = transactions.filter(tx => {
-    const txDate = new Date(tx.date);
-    return txDate.getMonth() === prevMonthNum && txDate.getFullYear() === prevYear;
+    // Reset icon to hamburger
+    mobileMenuIcon.innerHTML = `
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+    `;
   });
-
-  if (lastMonthTx.length === 0) return alert('No transactions for last month.');
-
-  // Excel export logic (Blob + a download)
-  const ws = XLSX.utils.json_to_sheet(lastMonthTx);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Previous Month Transactions');
-  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([wbout], { type: 'application/octet-stream' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `transactions-${prevYear}-${prevMonthNum + 1}.xlsx`;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 100);
-}
-
-
-
-// ===============================
-// 🧮 Core Variables
-// ===============================
-
-let transactions = loadTransactions();
-
-const transactionList = document.getElementById('transactionList');
-const totalIncome = document.getElementById('totalIncome');
-const totalExpense = document.getElementById('totalExpense');
-const totalBalance = document.getElementById('totalBalance');
-
-const openModalBtn = document.getElementById('openModalBtn');
-const modal = document.getElementById('addTransaction');
-const cancelBtn = document.getElementById('cancelBtn');
-const form = document.getElementById('transactionForm');
-const themeBtn = document.getElementById('themeBtn');
-
-
-// ===============================
-// 🌙 Theme Controls
-// ===============================
-
-function applySavedTheme() {
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  document.body.classList.toggle('dark', savedTheme === 'dark');
-  updateThemeIcon();
-}
-
-function updateThemeIcon() {
-  const isDark = document.body.classList.contains('dark');
-  themeBtn.textContent = isDark ? '☀️' : '🌙';
-}
-
-themeBtn.addEventListener('click', () => {
-  document.body.classList.toggle('dark');
-  const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
-  localStorage.setItem('theme', theme);
-  updateThemeIcon();
 });
 
-// Initialize theme on page load
-applySavedTheme();
 
 
-// ===============================
-// 🪟 Modal Controls
-// ===============================
+/* ===== LocalStorage ===== */
+let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+let incomes = JSON.parse(localStorage.getItem('incomes')) || [];
+const USD_TO_KHR = 4000;
 
-openModalBtn.addEventListener('click', () => {
-  modal.classList.remove('hidden');
-});
+/* ===== Helper Functions ===== */
+function saveExpenses(){ localStorage.setItem('expenses', JSON.stringify(expenses)); }
+function saveIncomes(){ localStorage.setItem('incomes', JSON.stringify(incomes)); }
+function formatCurrency(num, currency='USD'){
+  if(currency==='USD') return '$'+num.toFixed(2);
+  return num.toLocaleString()+' KHR';
+}
 
-cancelBtn.addEventListener('click', () => {
-  modal.classList.add('hidden');
-  form.reset();
-});
+/* ===== Home Tab ===== */
+const summaryDiv = document.getElementById('summary-cards');
+const expenseChartCtx = document.getElementById('expense-chart').getContext('2d');
+let expenseChart;
 
-// ===============================
-// ➕ Add Transaction
-// ===============================
+function updateHome(){
+  const totalExpense = expenses.reduce((a,b)=>a+b.amount,0);
+  const totalIncome = incomes.reduce((a,b)=>a+b.amount,0);
+  const balance = totalIncome + totalExpense;
 
-form.addEventListener('submit', (e) => {
+  summaryDiv.innerHTML = `
+    <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+      <h3 class="text-gray-500 text-sm">Total Expenses</h3>
+      <p class="text-2xl md:text-3xl font-semibold text-red-500">${formatCurrency(Math.abs(totalExpense))}</p>
+    </div>
+    <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+      <h3 class="text-gray-500 text-sm">Current Balance</h3>
+      <p class="text-2xl md:text-3xl font-semibold text-blue-500">${formatCurrency(balance)}</p>
+    </div>
+  `;
+
+  const categories = [...new Set(expenses.map(e=>e.category))];
+  const totals = categories.map(cat=>expenses.filter(e=>e.category===cat).reduce((a,b)=>a+b.amount,0));
+  if(expenseChart) expenseChart.destroy();
+  expenseChart = new Chart(expenseChartCtx,{
+    type:'doughnut',
+    data:{labels:categories,datasets:[{data:totals.map(Math.abs),backgroundColor:['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899']}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right'},title:{display:true,text:'Expenses by Category'}}}
+  });
+}
+
+/* ===== Expense Tab ===== */
+const expenseForm = document.getElementById('expense-form');
+const expenseBody = document.getElementById('expense-body');
+
+function renderExpenses(){
+  expenseBody.innerHTML='';
+  expenses.forEach(e=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="px-2 py-1">${e.date}</td>
+                  <td class="px-2 py-1">${e.category}</td>
+                  <td class="px-2 py-1">${e.description}</td>
+                  <td class="px-2 py-1 text-red-500">${formatCurrency(Math.abs(e.amount))}</td>
+                  <td class="px-2 py-1 space-x-1">
+                    <button data-id="${e.id}" class="edit-expense px-2 py-1 bg-yellow-400 text-white rounded">Edit</button>
+                    <button data-id="${e.id}" class="delete-expense px-2 py-1 bg-red-500 text-white rounded">Delete</button>
+                  </td>`;
+    expenseBody.appendChild(tr);
+  });
+  attachExpenseActions();
+  updateHome();
+}
+
+expenseForm.addEventListener('submit', e=>{
   e.preventDefault();
-
-  const type = document.getElementById('type').value;
-  const amount = parseFloat(document.getElementById('amount').value);
-  const currency = document.getElementById('currency').value.trim();
-  const category = document.getElementById('category').value.trim();
-  const note = document.getElementById('note').value.trim() ? document.getElementById('note').value.trim() : 'N/A';
-  const date = document.getElementById('date').value;
-  const paymentMethod = document.getElementById('paymentMethod').value.trim();
-  const tagsInput = document.getElementById('tags').value.trim();
-  const receiptUrl = document.getElementById('receiptUrl').value.trim();
-
-  // Validation
-  if (!amount || !category || !date || !currency) {
-    alert('⚠️ Please fill all required fields.');
-    return;
-  }
-
-  const newTx = {
-    id: generateId(),
-    type,
-    amount,
-    currency,
-    category,
-    note,
-    date,
-    paymentMethod,
-    tagsInput,
-    receiptUrl,
-    createdAt: new Date().toISOString()
-  };
-
-  // Add to the **top** of transactions array
-  transactions.unshift(newTx);
-  saveTransactions(transactions);
-  renderTransactions();
-  updateSummary();
-
-  form.reset();
-  modal.classList.add('hidden');
+  const date=document.getElementById('expense-date').value;
+  const category=document.getElementById('expense-category').value;
+  const desc=document.getElementById('expense-desc').value;
+  const amount=parseFloat(document.getElementById('expense-amount').value)||0;
+  if(!date||!category||!desc||!amount) return;
+  expenses.push({id:Date.now(),date,category,description:desc,amount:-Math.abs(amount)});
+  saveExpenses();
+  renderExpenses();
+  expenseForm.reset();
 });
 
-
-
-// ===============================
-// 🗑️ Delete Transaction
-// ===============================
-
-function deleteTransaction(id) {
-  if (!confirm('🗑️ Delete this transaction?')) return;
-  transactions = transactions.filter(tx => tx.id !== id);
-  saveTransactions(transactions);
-  renderTransactions();
-  updateSummary();
-}
-
-
-// ===============================
-// 🖼️ Render Transactions
-// ===============================
-
-function renderTransactions() {
-  transactionList.innerHTML = '';
-
-  if (transactions.length === 0) {
-    transactionList.innerHTML = '<li class="empty-msg">No transactions yet.</li>';
-    return;
-  }
-
-  transactions
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .forEach(tx => {
-      const li = document.createElement('li');
-      li.classList.add('tx-card', tx.type);
-
-      const emoji = tx.type === 'income' ? '💵' : '💸';
-      const sign = tx.type === 'income' ? '+' : '-';
-      const currencySymbol = tx.currency === 'USD' ? '$' : (tx.currency === 'KHR' ? '៛' : '');
-
-      const categoryEmojiMap = {
-        "Housing": "🏠",
-        "Transportation": "🚗",
-        "Food": "🍔",
-        "Health & Medical": "💊",
-        "Savings & Investments": "💰",
-        "Personal": "🧑",
-        "Entertainment & Leisure": "🎬",
-        "Miscellaneous": "📦",
-        "Other": "❓"
-      };
-
-      
-      const categoryEmoji = categoryEmojiMap[tx.category] || "❓";
-
-      li.innerHTML = `
-        <div class="tx-left">
-          <div class="tx-icon">${emoji}</div>
-          <div class="tx-details">
-            <span class="tx-category">${categoryEmoji} ${tx.category}</span>
-            ${tx.note ? `<span class="tx-note"> ${tx.note}</span>` : ''}
-            <small class="tx-date">${tx.date}</small>
-            <small class="tx-meta">
-              ${tx.paymentMethod ? `💳 ${tx.paymentMethod}` : ''}
-              ${tx.tags?.length ? `🏷️ ${tx.tags.join(', ')}` : ''}
-            </small>
-            ${tx.receiptUrl ? `<a href="${tx.receiptUrl}" target="_blank" class="tx-receipt">🧾 View Receipt</a>` : ''}
-          </div>
-        </div>
-        <div class="tx-right">
-          <span class="tx-amount ${tx.type}">${sign}${currencySymbol}${tx.amount}</span>
-          <button class="delete-btn" title="Delete" data-id="${tx.id}">🗑️</button>
-        </div>
-      `;
-
-
-      transactionList.appendChild(li);
+function attachExpenseActions(){
+  document.querySelectorAll('.delete-expense').forEach(btn=>{
+    btn.addEventListener('click',()=>{ 
+      const id=parseInt(btn.dataset.id); 
+      expenses=expenses.filter(e=>e.id!==id); saveExpenses(); renderExpenses();
     });
-
-  document.querySelectorAll('.delete-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      const id = e.target.dataset.id;
-      deleteTransaction(id);
+  });
+  document.querySelectorAll('.edit-expense').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const id=parseInt(btn.dataset.id);
+      const e=expenses.find(x=>x.id===id);
+      if(!e) return;
+      document.getElementById('expense-date').value=e.date;
+      document.getElementById('expense-category').value=e.category;
+      document.getElementById('expense-desc').value=e.description;
+      document.getElementById('expense-amount').value=Math.abs(e.amount);
+      expenses=expenses.filter(x=>x.id!==id);
+      saveExpenses();
+      renderExpenses();
     });
   });
 }
 
+/* ===== Income Tab with Currency Conversion ===== */
+const incomeForm=document.getElementById('income-form');
+const incomeBody=document.getElementById('income-body');
+const incomeSummary=document.getElementById('income-summary');
 
-// ===============================
-// 💰 Update Summary
-// ===============================
+function renderIncome(){
+  incomeBody.innerHTML='';
+  let totalUSD=0;
+  incomes.forEach(i=>{
+    const totalKHR = i.currency==='USD' ? i.amount*USD_TO_KHR : i.amount;
+    const totalInUSD = i.currency==='KHR' ? i.amount/USD_TO_KHR : i.amount;
+    totalUSD += totalInUSD;
 
-function maskIncome(value) {
-  const str = value.toString();
-  if (str.length <= 2) return '*'.repeat(str.length);
-  return str.slice(0, 2) + '*'.repeat(str.length - 2);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="px-2 py-1">${i.date}</td>
+                  <td class="px-2 py-1">${formatCurrency(i.amount,i.currency)}</td>
+                  <td class="px-2 py-1">${formatCurrency(totalKHR,'KHR')}</td>
+                  <td class="px-2 py-1">${formatCurrency(totalInUSD,'USD')}</td>
+                  <td class="px-2 py-1">${i.source}</td>
+                  <td class="px-2 py-1">${i.note}</td>
+                  <td class="px-2 py-1 space-x-1">
+                    <button data-id="${i.id}" class="edit-income px-2 py-1 bg-yellow-400 text-white rounded">Edit</button>
+                    <button data-id="${i.id}" class="delete-income px-2 py-1 bg-red-500 text-white rounded">Delete</button>
+                  </td>`;
+    incomeBody.appendChild(tr);
+  });
+
+  // Income summary
+  incomeSummary.innerHTML=`<div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+    <h3 class="text-gray-500 text-sm">Total Income (USD)</h3>
+    <p class="text-2xl md:text-3xl font-semibold text-green-500">${formatCurrency(totalUSD,'USD')}</p>
+  </div>`;
+
+  attachIncomeActions();
 }
 
+incomeForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  const date=document.getElementById('income-date').value;
+  const amount=parseFloat(document.getElementById('income-amount').value)||0;
+  const currency=document.getElementById('income-currency').value;
+  const source=document.getElementById('income-source').value;
+  const note=document.getElementById('income-note').value;
+  if(!date||!amount||!source) return;
 
-function updateSummary() {
-  const USD_RATE = 4000; 
+  incomes.push({id:Date.now(),date,amount,currency,source,note});
+  saveIncomes();
+  renderIncome();
+  incomeForm.reset();
+});
 
-  function toUSD(tx) {
-    if (tx.currency === 'KHR') return tx.amount / USD_RATE;
-    return tx.amount;
-  }
-
-  const income = transactions
-    .filter(tx => tx.type === 'income')
-    .reduce((sum, tx) => sum + toUSD(tx), 0);
-
-  const expense = transactions
-    .filter(tx => tx.type === 'expense')
-    .reduce((sum, tx) => sum + toUSD(tx), 0);
-
-  const balance = income - expense;
-
-  totalIncome.textContent = formatCurrency(income, 'USD');
-  totalExpense.textContent = formatCurrency(expense, 'USD');
-  totalBalance.textContent = formatCurrency(balance, 'USD');
+function attachIncomeActions(){
+  document.querySelectorAll('.delete-income').forEach(btn=>{
+    btn.addEventListener('click',()=>{ 
+      const id=parseInt(btn.dataset.id); 
+      incomes=incomes.filter(i=>i.id!==id); saveIncomes(); renderIncome();
+    });
+  });
+  document.querySelectorAll('.edit-income').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id=parseInt(btn.dataset.id);
+      const i = incomes.find(x=>x.id===id);
+      if(!i) return;
+      document.getElementById('income-date').value = i.date;
+      document.getElementById('income-amount').value = i.amount;
+      document.getElementById('income-currency').value = i.currency;
+      document.getElementById('income-source').value = i.source;
+      document.getElementById('income-note').value = i.note;
+      incomes=incomes.filter(x=>x.id!==id);
+      saveIncomes();
+      renderIncome();
+    });
+  });
 }
 
-
-// ===============================
-// 💾 Export / Import (Excel)
-// ===============================
-
-const exportBtn = document.createElement('button');
-exportBtn.textContent = '⬇️ Export Excel';
-exportBtn.className = 'btn-secondary';
-document.querySelector('.footer').appendChild(exportBtn);
-
-exportBtn.addEventListener('click', () => {
-  if (transactions.length === 0) return alert('No data to export');
-
-  const ws = XLSX.utils.json_to_sheet(transactions);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
-
-  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([wbout], { type: 'application/octet-stream' });
-
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'expense-data.xlsx';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 100);
-});
-
-
-const importFile = document.createElement('input');
-importFile.type = 'file';
-importFile.accept = '.xlsx, .xls';
-importFile.style.display = 'none';
-document.body.appendChild(importFile);
-
-importFile.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = evt => {
-    const data = new Uint8Array(evt.target.result);
-    const workbook = XLSX.read(data, { type: 'array' });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const imported = XLSX.utils.sheet_to_json(sheet);
-
-    if (Array.isArray(imported)) {
-      if (confirm('Replace existing data with imported Excel data?')) {
-        transactions = imported;
-        saveTransactions(transactions);
-        renderTransactions();
-        updateSummary();
-        alert('✅ Data imported successfully!');
-      }
-    } else {
-      alert('❌ Invalid Excel format.');
-    }
-  };
-  reader.readAsArrayBuffer(file);
-});
-
-const clearBtn = document.getElementById('clearBtn');
-
-clearBtn.addEventListener('click', () => {
-  if (transactions.length === 0) {
-    alert('No transactions to clear.');
-    return;
-  }
-
-  // Step 1: Ask if user wants to export first
-  const exportFirst = confirm('Do you want to export transactions before clearing?');
-  if (exportFirst) {
-    if (transactions.length > 0) {
-      // Trigger export programmatically
-      exportBtn.click();
-      alert('Please check your downloaded file before clearing.');
-    }
-  }
-
-  // Step 2: Ask for final confirmation
-  const confirmClear = confirm('Are you sure you want to clear all transactions? This cannot be undone.');
-  if (!confirmClear) return;
-
-  // Step 3: Clear data
-  transactions = [];
-  saveTransactions(transactions);
-  renderTransactions();
-  updateSummary();
-
-  alert('All transactions cleared.');
-});
-
-
-const importBtn = document.createElement('button');
-importBtn.textContent = '⬆️ Import Excel';
-importBtn.className = 'btn-secondary';
-document.querySelector('.footer').appendChild(importBtn);
-importBtn.addEventListener('click', () => importFile.click());
-
-
-// ===============================
-// 🚀 Initialize App
-// ===============================
-
-function init() {
-  renderTransactions();
-  updateSummary();
-}
-
-init();
+/* ===== Initial Render ===== */
+renderExpenses();
+renderIncome();
+updateHome();
